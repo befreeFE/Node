@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-default/index.css">
+</head>
+
+<body>
+    <div id="app">
+        <div style="width: 900px;margin:50px auto;">
+            <el-button @click="handleAdd" style="margin-bottom: 10px;float:right" type="primary">新增</el-button>
+            <el-table :data="studentData" border>
+                <el-table-column prop="name" label="姓名" max-width="280">
+                </el-table-column>
+                <el-table-column prop="phone" label="号码">
+                </el-table-column>
+                <el-table-column label="操作" align="center">
+                    <template scope="scope">
+                        <el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+                        <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+
+        <el-dialog :title="dialogTitle" :visible.sync="dialogFormVisible" size="tiny">
+            <el-form :model="form">
+                <el-form-item label="姓名" :label-width="formLabelWidth">
+                    <el-input v-model="form.name" auto-complete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="号码" :label-width="formLabelWidth">
+                    <el-input v-model="form.phone" auto-complete="off"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="addSubmit" v-if="dialogTitle=='新增'">增 加</el-button>
+                <el-button type="primary" @click="updateSubmit" v-else>确 定</el-button>
+            </div>
+        </el-dialog>
+
+    </div>
+</body>
+<!-- 先引入 Vue -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    axios.defaults.baseURL = 'http://localhost:8001/';
+
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                studentData: [],
+                dialogFormVisible: false,
+                dialogTitle: '',
+                form: {
+                    _id: '',
+                    name: '',
+                    phone: ''
+                },
+                formLabelWidth: '40px'
+            }
+        },
+        mounted() {
+            this.initData();
+        },
+        methods: {
+            initData() {
+                var _this = this;
+                axios.get('/v1/getStudent').then(function (res) {
+                    _this.studentData = res.data;
+                });
+            },
+            handleEdit(index, row) {
+                this.resetForm();
+                this.dialogTitle = '编辑'
+                this.form = Object.assign({}, row);
+            },
+            handleDelete(index, row) {
+                var _this = this;
+                this.form = Object.assign({}, row);
+                axios.post('/v1/deleteStudent', { _id: _this.form._id });
+                this.initData();
+            },
+            handleAdd() {
+                this.resetForm();
+                this.dialogTitle = '新增'
+            },
+            resetForm() {
+                this.dialogFormVisible = true;
+                this.form = {
+                    name: '',
+                    phone: ''
+                };
+            },
+            submitForm() {
+                var _this = this;
+                this.dialogFormVisible = false;
+                this.$notify({
+                    title: '成功',
+                    message: _this.dialogTitle + '成功',
+                    type: 'success',
+                    duration: 2000
+                });
+            },
+            addSubmit() {
+                var _this = this;
+                axios.post('/v1/addStudent', { name: _this.form.name, phone: _this.form.phone });
+                this.submitForm();
+                this.initData();
+            },
+            updateSubmit() {
+                var _this = this;
+                axios.post('/v1/updateStudent', { _id: _this.form._id, name: _this.form.name, phone: _this.form.phone });
+                this.submitForm();
+                this.initData();
+            }
+        }
+    })
+
+</script>
+
+</html>
